@@ -53,7 +53,6 @@ class BCNN(torch.nn.Module):
                                             [:-1])  # Remove pool5.
         # Linear classifier.
         self.fc = torch.nn.Linear(512**2, 200)
-
         # Freeze all previous layers.
         for param in self.features.parameters():
             param.requires_grad = False
@@ -282,4 +281,6 @@ def main():
 
 
 if __name__ == '__main__':
+    print("等着数据集呢！")
     main()
+
