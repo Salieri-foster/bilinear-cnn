@@ -12,7 +12,6 @@ import os
 
 import torch
 import torchvision
-
 import cub200
 
 torch.manual_seed(0)
@@ -136,10 +135,10 @@ class BCNNManager(object):
                                              std=(0.229, 0.224, 0.225))
         ])
         train_data = cub200.CUB200(
-            root=self._path['cub200'], train=True, download=True,
+            root=self._path['cub200'], train=True, download=False,
             transform=train_transforms)
         test_data = cub200.CUB200(
-            root=self._path['cub200'], train=False, download=True,
+            root=self._path['cub200'], train=False, download=False,
             transform=test_transforms)
         self._train_loader = torch.utils.data.DataLoader(
             train_data, batch_size=self._options['batch_size'],
@@ -161,14 +160,14 @@ class BCNNManager(object):
             for X, y in self._train_loader:
                 # Data.
                 X = torch.autograd.Variable(X.cuda())
-                y = torch.autograd.Variable(y.cuda(async=True))
+                y = torch.autograd.Variable(y.cuda(non_blocking=True))
 
                 # Clear the existing gradients.
                 self._solver.zero_grad()
                 # Forward pass.
                 score = self._net(X)
                 loss = self._criterion(score, y)
-                epoch_loss.append(loss.data[0])
+                epoch_loss.append(loss.item())
                 # Prediction.
                 _, prediction = torch.max(score.data, 1)
                 num_total += y.size(0)
@@ -206,7 +205,7 @@ class BCNNManager(object):
         for X, y in data_loader:
             # Data.
             X = torch.autograd.Variable(X.cuda())
-            y = torch.autograd.Variable(y.cuda(async=True))
+            y = torch.autograd.Variable(y.cuda(non_blocking=True))
 
             # Prediction.
             score = self._net(X)
@@ -267,7 +266,8 @@ def main():
         'weight_decay': args.weight_decay,
     }
 
-    project_root = os.popen('pwd').read().strip()
+    # project_root = os.popen('pwd').read().strip()
+    project_root = ""
     path = {
         'cub200': os.path.join(project_root, 'data/cub200'),
         'model': os.path.join(project_root, 'model'),
@@ -281,6 +281,5 @@ def main():
 
 
 if __name__ == '__main__':
-    print("等着数据集呢！")
     main()
 

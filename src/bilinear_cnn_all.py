@@ -63,6 +63,7 @@ class BCNN(torch.nn.Module):
         Returns:
             Score, torch.autograd.Variable of shape N*200.
         """
+
         N = X.size()[0]
         assert X.size() == (N, 3, 448, 448)
         X = self.features(X)
@@ -156,14 +157,14 @@ class BCNNManager(object):
             for X, y in self._train_loader:
                 # Data.
                 X = torch.autograd.Variable(X.cuda())
-                y = torch.autograd.Variable(y.cuda(async=True))
+                y = torch.autograd.Variable(y.cuda(non_blocking=True))
 
                 # Clear the existing gradients.
                 self._solver.zero_grad()
                 # Forward pass.
                 score = self._net(X)
                 loss = self._criterion(score, y)
-                epoch_loss.append(loss.data[0])
+                epoch_loss.append(loss.item())
                 # Prediction.
                 _, prediction = torch.max(score.data, 1)
                 num_total += y.size(0)
@@ -197,7 +198,7 @@ class BCNNManager(object):
         for X, y in data_loader:
             # Data.
             X = torch.autograd.Variable(X.cuda())
-            y = torch.autograd.Variable(y.cuda(async=True))
+            y = torch.autograd.Variable(y.cuda(non_blocking=True))
 
             # Prediction.
             score = self._net(X)
@@ -260,10 +261,10 @@ def main():
         'weight_decay': args.weight_decay,
     }
 
-    project_root = os.popen('pwd').read().strip()
+    project_root = ""
     path = {
         'cub200': os.path.join(project_root, 'data/cub200'),
-        'model': os.path.join(project_root, 'model', args.model),
+        'model': os.path.join(project_root, args.model),
     }
     for d in path:
         if d == 'model':
@@ -272,9 +273,10 @@ def main():
             assert os.path.isdir(path[d])
 
     manager = BCNNManager(options, path)
-    # manager.getStat()
+    # manager.getStat():
     manager.train()
 
 
 if __name__ == '__main__':
+    os.environ['CUDA_VISIBLE_DEVICES']='0'
     main()
